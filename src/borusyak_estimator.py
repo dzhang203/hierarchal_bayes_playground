@@ -289,10 +289,32 @@ def borusyak_imputation_estimator(
 
         # Cohort SE (standard error of the mean)
         # Conservative: use sample SD / sqrt(n)
-        cohort_se = cohort_ites.std() / np.sqrt(len(cohort_ites))
+        if len(cohort_ites) > 1:
+            cohort_se = cohort_ites.std() / np.sqrt(len(cohort_ites))
+        else:
+            # Single-member cohort: use fallback SE based on global variation
+            # This is conservative - we'll replace it with median cohort SE after all cohorts are processed
+            cohort_se = np.nan
 
         cohort_atts[adoption_week] = cohort_att
         cohort_ses[adoption_week] = cohort_se
+
+    # For single-member cohorts, use median SE from multi-member cohorts
+    valid_ses = [se for se in cohort_ses.values() if not np.isnan(se)]
+    if valid_ses:
+        median_se = np.median(valid_ses)
+        for week, se in cohort_ses.items():
+            if np.isnan(se):
+                cohort_ses[week] = median_se
+                if verbose:
+                    print(f"  ⚠️  Week {week}: single-member cohort, using median SE = {median_se:.3f}")
+    else:
+        # All cohorts are single-member (edge case)
+        # Use global std as fallback
+        global_se = ite_df['effect_hat'].std() / np.sqrt(len(ite_df))
+        for week in cohort_ses.keys():
+            if np.isnan(cohort_ses[week]):
+                cohort_ses[week] = global_se
 
     # Assign cohort SEs to individuals
     ite_df['se_cohort'] = ite_df['adoption_week'].map(cohort_ses)
@@ -386,7 +408,13 @@ def validate_borusyak_estimates(
     """
     # Get true effects for treated units
     creator_ids = ite_estimates['creator_id'].values
-    true_treated = true_effects[creator_ids]
+
+    # Handle both dict and Series/array
+    if isinstance(true_effects, dict):
+        true_treated = np.array([true_effects[cid] for cid in creator_ids])
+    else:
+        # Assume Series or array-like with indexing
+        true_treated = true_effects[creator_ids].values if hasattr(true_effects[creator_ids], 'values') else true_effects[creator_ids]
 
     # Compute errors
     errors = ite_estimates['effect_hat'].values - true_treated

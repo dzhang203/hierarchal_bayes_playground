@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/davidzhang/github/hierarchal_bayes_playground/run_staggered_analysis.py", line 34, in <module>
+    from src.grouping_selection import (
+    ...<4 lines>...
+    )
+  File "/Users/davidzhang/github/hierarchal_bayes_playground/src/grouping_selection.py", line 18, in <module>
+    from hierarchical_model import fit_hierarchical_model, prepare_creator_summaries
+ModuleNotFoundError: No module named 'hierarchical_model'

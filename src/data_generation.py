@@ -11,10 +11,10 @@ from typing import Tuple, Dict
 
 
 def generate_experiment_data(
-    n_genres: int = 5,
-    n_creators_per_genre: int = 100,
+    n_genres: int = 10,
+    n_creators_per_genre: int = 20,
     genre_mean: float = 0.5,
-    genre_std: float = 0.3,
+    genre_std: float = 0.2,
     sigma_creator: float = 0.4,
     sigma_obs: float = 2.0,
     baseline_revenue: float = 5.0,
